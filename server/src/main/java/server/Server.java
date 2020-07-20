@@ -39,7 +39,6 @@ public class Server {
             e.printStackTrace();
         } finally {
             try {
-                authService.disconnect();
                 server.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -58,8 +57,8 @@ public class Server {
     }
 
     void privateMsg(String nickname, ClientHandler client, String msg){
-        if (nickname.equals("сервера")) {
-            client.sendMsg("Сообщение от " + nickname + ": "+ msg);
+        if (nickname.equals("Сервер")) {
+            client.sendMsg(nickname + ": "+ msg);
             return;
         }
         else {
@@ -84,7 +83,7 @@ public class Server {
     public void subscribe(ClientHandler clientHandler){
         clients.add(clientHandler);
         broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler);
-        privateMsg("сервера", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
+        privateMsg("Сервер", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
                 "Для отправки приватного сообщения перед текстом сообщения введите: /w usernickname\nДля выхода из чата направьте команду: /end");
         broadcastClientsList();
     }
@@ -94,16 +93,13 @@ public class Server {
         clients.remove(clientHandler);
         broadcastClientsList();
     }
-    public void changeNick(ClientHandler client, String newNick) {
-        for (ClientHandler c : clients) {
-            if (c.getNick().equals(newNick)) {
-                privateMsg("сервера", client, "данный никнейм уже занят");
-                return;
-            }
-        }
-        broadcastMsg(client.getNick() + " сменил ник на " +newNick, client);
-        client.setNick(newNick);
-        broadcastClientsList();
+    public void changeNick(ClientHandler client, String newNick) throws SQLException {
+        if (authService.changeNick(client.getNick(), newNick)) {
+            System.out.println(client.getNick() + " " + newNick);
+            broadcastMsg(client.getNick() + " сменил ник на " + newNick, client);
+            client.setNick(newNick);
+            broadcastClientsList();
+        } else {privateMsg("Сервер", client, "данный никнейм уже занят");}
     }
 
     public void broadcastClientsList() {

@@ -178,16 +178,18 @@ public class Controller implements Initializable {
                         }
                         else {
                             Platform.runLater(() -> {
-                                if (str.startsWith("Сообщение от")) {
-                                    String[] token = str.split("\\s", 4);
-                                    Text text1 = new Text(str + "\n");
+                                String[] token = str.split("\\s", 2);
+                                if (str.startsWith("Сервер")) {
+                                    Text textServ = new Text(token[0]+" ");
+                                    textServ.setFill(Color.BLACK);
+                                    textServ.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
+                                    Text text1 = new Text(token[1] + "\n");
                                     text1.setFill(Color.BLACK);
                                     text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                    chatText.getChildren().addAll(text1);
+                                    chatText.getChildren().addAll(textServ, text1);
                                     sp.setVvalue( 1.0d );
                                 }
                                 else {
-                                    String[] token = str.split("\\s", 2);
                                     if (token[0].endsWith(":")) {
                                         Text nickname = new Text();
                                         if (token[0].equals(nick+":")) {

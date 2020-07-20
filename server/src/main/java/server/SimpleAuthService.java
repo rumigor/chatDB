@@ -56,4 +56,7 @@ public class SimpleAuthService implements AuthService {
     public void disconnect() {
 
     }
+
+    @Override
+    public boolean changeNick(String oldNick, String newNick){return true;};
 }
