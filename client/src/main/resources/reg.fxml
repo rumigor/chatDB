@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.net.URL?>
+<VBox alignment="center" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/10.0.2-internal" fx:controller="client.RegController">
+    <stylesheets>
+        <URL value="@/css/style.css" />
+    </stylesheets>
+
+    <Label text="Login" />
+    <TextField fx:id="loginField" promptText="login" />
+    <Label text="Password" />
+    <PasswordField fx:id="passwordField" promptText="password" />
+    <Label text="Nickname" />
+    <TextField fx:id="nicknameField" promptText="nickname" />
+    <HBox HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
+        <Button alignment="CENTER" contentDisplay="BOTTOM" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minWidth="200" onAction="#tryToReg" text="Создать аккаунт" textAlignment="CENTER" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" />
+        <Button alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minWidth="200" onAction="#clickCancelBtn" text="Отмена" textAlignment="CENTER" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" fx:id="cancelButton"/>
+    </HBox>
+
+
+</VBox>
