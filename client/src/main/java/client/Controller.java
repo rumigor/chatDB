@@ -183,7 +183,8 @@ public class Controller implements Initializable {
                                 setTitle(nick);
                             }
                             if (str.startsWith("/loadStory")){
-
+                                String[] token = str.split("\\s", 2);
+                                storyController.msgArchive.appendText(token[1]);
                             }
                         }
                         else {

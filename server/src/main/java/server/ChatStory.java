@@ -52,20 +52,18 @@ public class ChatStory {
         StringBuilder chatStory = new StringBuilder();
         connection.setAutoCommit(false);
         ResultSet story = getStory.executeQuery();
-
-
         while (story.next()) {
             if (story.getString(4) == null) {
                 String msgToAll = String.format("%s %s: %s", story.getString(1), story.getString(2), story.getString(3));
-                chatStory
+                chatStory.append(msgToAll + "\n");
             }
             else if (story.getString(4).equals(nickname)){
                 String prvMsg = String.format("%s лично %s: %s", story.getString(1), story.getString(2), story.getString(3));
-                chatStory.add(prvMsg);
+                chatStory.append(prvMsg + "\n");
             }
         }
         connection.commit();
         story.close();
-        return chatStory;
+        return chatStory.toString();
     }
 }

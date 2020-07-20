@@ -134,10 +134,7 @@ public class Server {
     }
 
 
-    public void loadStory(ClientHandler clientHandler) throws SQLException {
-        List<String> msgStory = chatStory.getChatStory(clientHandler.getNick());
-        for (String s : msgStory) {
-            clientHandler.sendMsg(s);
-        }
+    public void loadStory(ClientHandler client) throws SQLException {
+        client.sendMsg("/loadStory" + chatStory.getChatStory(client.getLogin()));
     }
 }
