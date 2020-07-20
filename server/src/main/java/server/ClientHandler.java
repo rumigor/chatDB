@@ -96,7 +96,7 @@ public class ClientHandler {
                                 server.changeNick(this, token[1]);
                             }
                             if (str.startsWith("/loadStory")) {
-                                server.loadStory(this);
+                                server.loadStory(this);  //подготовка истории сообщений
                             }
                         }
                         else {

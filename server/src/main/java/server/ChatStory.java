@@ -39,7 +39,7 @@ public class ChatStory {
         getStory = connection.prepareStatement("SELECT time, nickname, message, private FROM story");
     }
 
-    public void messageToStory(String time, String name, String msg, String privateNick) throws SQLException {
+    public void messageToStory(String time, String name, String msg, String privateNick) throws SQLException { //сохраняем сообщения в БД
         connection.setAutoCommit(false);
         addToStory.setString(1, time);
         addToStory.setString(2, name);
@@ -49,7 +49,7 @@ public class ChatStory {
         connection.commit();
     }
 
-    public String getChatStory (String nickname) throws SQLException {
+    public String getChatStory (String nickname) throws SQLException { //вытаскиваем сообщения из БД
         StringBuilder chatStory = new StringBuilder();
         connection.setAutoCommit(false);
         ResultSet story = getStory.executeQuery();

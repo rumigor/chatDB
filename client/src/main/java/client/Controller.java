@@ -184,7 +184,7 @@ public class Controller implements Initializable {
                             }
                             if (str.startsWith("/loadStory")){
                                 String[] token = str.split("\\s", 2);
-                                storyController.msgArchive.appendText(token[1]);
+                                storyController.msgArchive.appendText(token[1]); //загружаем историю в текстАрею окна Истории сообщений
                             }
                         }
                         else {
@@ -385,7 +385,7 @@ public class Controller implements Initializable {
         }
     }
 
-    private Stage createChatArchiveWindow() {
+    private Stage createChatArchiveWindow() { //создаем окно для истории сообщений
         Stage stage = new Stage();
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/story.fxml"));
@@ -405,7 +405,7 @@ public class Controller implements Initializable {
     }
 
 
-    public void openStory(ActionEvent actionEvent) throws IOException {
+    public void openStory(ActionEvent actionEvent) throws IOException { //открываем историю сообщений
         chatArchive.show();
         out.writeUTF("/loadStory");
     }

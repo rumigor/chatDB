@@ -57,7 +57,7 @@ public class Server {
         String message = msg;
         if (!msg.startsWith(sender.getNick())) {
              message = String.format("%s: %s", sender.getNick(), msg);
-             chatStory.messageToStory(sdf.format(new Date()), sender.getNick(), msg, null);
+             chatStory.messageToStory(sdf.format(new Date()), sender.getNick(), msg, null); //копируем сообщение в историю
         }
         for (ClientHandler client : clients) {
                 client.sendMsg(message);
@@ -79,7 +79,7 @@ public class Server {
                 if (nickname.equals(anotherClient.getNick())) {
                     anotherClient.sendMsg(message);
                     client.sendMsg(message);
-                    chatStory.messageToStory(sdf.format(new Date()), nickname, msg, client.getNick());
+                    chatStory.messageToStory(sdf.format(new Date()), nickname, msg, client.getNick()); //копируем сообщение в историю
                     isNickNameValid = true;
                     break;
                 }
@@ -94,7 +94,7 @@ public class Server {
     public void subscribe(ClientHandler clientHandler) throws SQLException {
         clients.add(clientHandler);
         broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler);
-        chatStory.messageToStory(sdf.format(new Date()), "Сервер", clientHandler.getNick()+" подключился к чату!", null);
+        chatStory.messageToStory(sdf.format(new Date()), "Сервер", clientHandler.getNick()+" подключился к чату!", null); //копируем сообщение в историю
         privateMsg("Сервер", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
                 "Для отправки приватного сообщения перед текстом сообщения введите: /w usernickname\nДля выхода из чата направьте команду: /end");
         broadcastClientsList();
@@ -102,7 +102,7 @@ public class Server {
 
     public void unsubscribe(ClientHandler clientHandler) throws SQLException {
         broadcastMsg(clientHandler.getNick() + " вышел из чата", clientHandler);
-        chatStory.messageToStory(sdf.format(new Date()), "Сервер", clientHandler.getNick() + " вышел из чата", null);
+        chatStory.messageToStory(sdf.format(new Date()), "Сервер", clientHandler.getNick() + " вышел из чата", null); //копируем сообщение в историю
         clients.remove(clientHandler);
         broadcastClientsList();
     }
@@ -110,7 +110,7 @@ public class Server {
         if (authService.changeNick(client.getNick(), newNick)) {
             System.out.println(client.getNick() + " " + newNick);
             broadcastMsg(client.getNick() + " сменил ник на " + newNick, client);
-            chatStory.messageToStory(sdf.format(new Date()), "Сервер", client.getNick()+" сменил ник на " + newNick, null);
+            chatStory.messageToStory(sdf.format(new Date()), "Сервер", client.getNick()+" сменил ник на " + newNick, null); //копируем сообщение в историю
             client.setNick(newNick);
             broadcastClientsList();
         } else {privateMsg("Сервер", client, "данный никнейм уже занят");}
@@ -137,6 +137,6 @@ public class Server {
 
 
     public void loadStory(ClientHandler client) throws SQLException {
-        client.sendMsg("/loadStory " + chatStory.getChatStory(client.getNick()));
+        client.sendMsg("/loadStory " + chatStory.getChatStory(client.getNick())); //пересылаем историю клиенту
     }
 }
