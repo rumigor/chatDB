@@ -54,7 +54,7 @@ public class Controller implements Initializable {
 
     private final int PORT = 8189;
     private final String IP_ADDRESS = "localhost";
-    private final String CHAT_TITLE_EMPTY = "Java-chat v.1.0";
+    private final String CHAT_TITLE_EMPTY = "Java-chat v.1.1";
 
 
 
@@ -405,7 +405,8 @@ public class Controller implements Initializable {
     }
 
 
-    public void openStory(ActionEvent actionEvent) {
+    public void openStory(ActionEvent actionEvent) throws IOException {
         chatArchive.show();
+        out.writeUTF("/loadStory");
     }
 }

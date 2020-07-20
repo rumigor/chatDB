@@ -44,6 +44,8 @@ public class Server {
             e.printStackTrace();
         } finally {
             try {
+                authService.disconnect();
+                chatStory.disconnect();
                 server.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -66,7 +68,7 @@ public class Server {
     void privateMsg(String nickname, ClientHandler client, String msg) throws SQLException {
         if (nickname.equals("Сервер")) {
             client.sendMsg(nickname + ": "+ msg);
-            chatStory.messageToStory(sdf.format(new Date()), nickname, msg, client.getNick());
+//            chatStory.messageToStory(sdf.format(new Date()), client.getNick(), msg, nickname);
             return;
         }
         else {
@@ -92,7 +94,7 @@ public class Server {
     public void subscribe(ClientHandler clientHandler) throws SQLException {
         clients.add(clientHandler);
         broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler);
-        chatStory.messageToStory(sdf.format(new Date()), "Сервер", "подключился к чату!", null);
+        chatStory.messageToStory(sdf.format(new Date()), "Сервер", clientHandler.getNick()+" подключился к чату!", null);
         privateMsg("Сервер", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
                 "Для отправки приватного сообщения перед текстом сообщения введите: /w usernickname\nДля выхода из чата направьте команду: /end");
         broadcastClientsList();
@@ -108,7 +110,7 @@ public class Server {
         if (authService.changeNick(client.getNick(), newNick)) {
             System.out.println(client.getNick() + " " + newNick);
             broadcastMsg(client.getNick() + " сменил ник на " + newNick, client);
-            chatStory.messageToStory(sdf.format(new Date()), "Сервер", "сменил ник на " + newNick, null);
+            chatStory.messageToStory(sdf.format(new Date()), "Сервер", client.getNick()+" сменил ник на " + newNick, null);
             client.setNick(newNick);
             broadcastClientsList();
         } else {privateMsg("Сервер", client, "данный никнейм уже занят");}
@@ -135,6 +137,6 @@ public class Server {
 
 
     public void loadStory(ClientHandler client) throws SQLException {
-        client.sendMsg("/loadStory" + chatStory.getChatStory(client.getLogin()));
+        client.sendMsg("/loadStory " + chatStory.getChatStory(client.getNick()));
     }
 }

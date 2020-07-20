@@ -13,9 +13,9 @@
     </stylesheets>
 
      <TextArea fx:id="msgArchive" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" editable="false"/>
-    <HBox HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
-        <Button alignment="CENTER" minWidth="200" onAction="#saveToFile" text="Сохранить в файл" textAlignment="CENTER" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" fx:id="saveButton"/>
-        <Button alignment="CENTER" minWidth="200" onAction="#clickCancelBtn" text="Закрыть" textAlignment="CENTER" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" fx:id="cancelButton"/>
+    <HBox>
+        <Button onAction="#saveToFile" text="Сохранить в файл" fx:id="saveButton" HBox.hgrow="ALWAYS"/>
+        <Button onAction="#clickCancelBtn" text="Закрыть" fx:id="cancelButton" HBox.hgrow="ALWAYS"/>
     </HBox>
 
 

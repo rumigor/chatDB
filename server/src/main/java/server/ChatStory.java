@@ -45,6 +45,7 @@ public class ChatStory {
         addToStory.setString(2, name);
         addToStory.setString(3, msg);
         addToStory.setString(4, privateNick);
+        addToStory.executeUpdate();
         connection.commit();
     }
 
@@ -57,8 +58,8 @@ public class ChatStory {
                 String msgToAll = String.format("%s %s: %s", story.getString(1), story.getString(2), story.getString(3));
                 chatStory.append(msgToAll + "\n");
             }
-            else if (story.getString(4).equals(nickname)){
-                String prvMsg = String.format("%s лично %s: %s", story.getString(1), story.getString(2), story.getString(3));
+            else if (story.getString(2).equals(nickname) || story.getString(4).equals(nickname)){
+                String prvMsg = String.format("%s %s %s %s: %s", story.getString(1), story.getString(4), "лично для", story.getString(2), story.getString(3));
                 chatStory.append(prvMsg + "\n");
             }
         }

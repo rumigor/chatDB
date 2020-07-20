@@ -111,10 +111,8 @@ public class ClientHandler {
                         throwables.printStackTrace();
                     }
                     sendMsg("/end");
-                } catch (IOException e) {
+                } catch (IOException | SQLException e) {
                     e.printStackTrace();
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
                 } finally {
                     System.out.println("Клиент отключился");
                     if (isSubscribed) {
