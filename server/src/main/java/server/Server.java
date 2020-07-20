@@ -4,12 +4,16 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
 public class Server {
     protected List<ClientHandler> clients;
     private AuthService authService;
+    private ChatStory chatStory;
+    private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
     public AuthService getAuthService() {
         return authService;
@@ -18,6 +22,7 @@ public class Server {
     public Server() throws SQLException, ClassNotFoundException {
         clients = new Vector<>();
         authService = new SQLAuthService();
+        chatStory = new ChatStory();
 
         ServerSocket server = null;
         Socket socket;
@@ -46,19 +51,22 @@ public class Server {
         }
     }
 
-    void broadcastMsg(String msg, ClientHandler sender){
+    void broadcastMsg(String msg, ClientHandler sender) throws SQLException {
         String message = msg;
         if (!msg.startsWith(sender.getNick())) {
              message = String.format("%s: %s", sender.getNick(), msg);
+             chatStory.messageToStory(sdf.format(new Date()), sender.getNick(), msg, null);
         }
         for (ClientHandler client : clients) {
                 client.sendMsg(message);
             }
+
     }
 
-    void privateMsg(String nickname, ClientHandler client, String msg){
+    void privateMsg(String nickname, ClientHandler client, String msg) throws SQLException {
         if (nickname.equals("Сервер")) {
             client.sendMsg(nickname + ": "+ msg);
+            chatStory.messageToStory(sdf.format(new Date()), nickname, msg, client.getNick());
             return;
         }
         else {
@@ -69,6 +77,7 @@ public class Server {
                 if (nickname.equals(anotherClient.getNick())) {
                     anotherClient.sendMsg(message);
                     client.sendMsg(message);
+                    chatStory.messageToStory(sdf.format(new Date()), nickname, msg, client.getNick());
                     isNickNameValid = true;
                     break;
                 }
@@ -80,16 +89,18 @@ public class Server {
 
     }
 
-    public void subscribe(ClientHandler clientHandler){
+    public void subscribe(ClientHandler clientHandler) throws SQLException {
         clients.add(clientHandler);
         broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler);
+        chatStory.messageToStory(sdf.format(new Date()), "Сервер", "подключился к чату!", null);
         privateMsg("Сервер", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
                 "Для отправки приватного сообщения перед текстом сообщения введите: /w usernickname\nДля выхода из чата направьте команду: /end");
         broadcastClientsList();
     }
 
-    public void unsubscribe(ClientHandler clientHandler){
+    public void unsubscribe(ClientHandler clientHandler) throws SQLException {
         broadcastMsg(clientHandler.getNick() + " вышел из чата", clientHandler);
+        chatStory.messageToStory(sdf.format(new Date()), "Сервер", clientHandler.getNick() + " вышел из чата", null);
         clients.remove(clientHandler);
         broadcastClientsList();
     }
@@ -97,6 +108,7 @@ public class Server {
         if (authService.changeNick(client.getNick(), newNick)) {
             System.out.println(client.getNick() + " " + newNick);
             broadcastMsg(client.getNick() + " сменил ник на " + newNick, client);
+            chatStory.messageToStory(sdf.format(new Date()), "Сервер", "сменил ник на " + newNick, null);
             client.setNick(newNick);
             broadcastClientsList();
         } else {privateMsg("Сервер", client, "данный никнейм уже занят");}
@@ -122,4 +134,10 @@ public class Server {
     }
 
 
+    public void loadStory(ClientHandler clientHandler) throws SQLException {
+        List<String> msgStory = chatStory.getChatStory(clientHandler.getNick());
+        for (String s : msgStory) {
+            clientHandler.sendMsg(s);
+        }
+    }
 }

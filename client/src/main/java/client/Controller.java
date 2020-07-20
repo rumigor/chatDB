@@ -22,6 +22,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Optional;
 import java.util.ResourceBundle;
 
@@ -64,7 +66,10 @@ public class Controller implements Initializable {
     private String nick;
     private Stage stage;
     private Stage regStage;
+    private Stage chatArchive;
+    private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
     RegController regController;
+    StoryController storyController;
 
 
 
@@ -105,7 +110,9 @@ public class Controller implements Initializable {
         });
         setAuthenticated(false);
         regStage = createRegWindow();
+        chatArchive = createChatArchiveWindow();
     }
+
 
     private void connect() {
         try {
@@ -175,18 +182,22 @@ public class Controller implements Initializable {
                                 nick = token[2];
                                 setTitle(nick);
                             }
+                            if (str.startsWith("/loadStory")){
+
+                            }
                         }
                         else {
                             Platform.runLater(() -> {
                                 String[] token = str.split("\\s", 2);
                                 if (str.startsWith("Сервер")) {
+                                    Text time = new Text(sdf.format(new Date())+ " ");
                                     Text textServ = new Text(token[0]+" ");
                                     textServ.setFill(Color.BLACK);
                                     textServ.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
                                     Text text1 = new Text(token[1] + "\n");
                                     text1.setFill(Color.BLACK);
                                     text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                    chatText.getChildren().addAll(textServ, text1);
+                                    chatText.getChildren().addAll(time, textServ, text1);
                                     sp.setVvalue( 1.0d );
                                 }
                                 else {
@@ -203,7 +214,8 @@ public class Controller implements Initializable {
                                         Text msg = new Text(token[1] + "\n");
                                         msg.setFill(Color.BLACK);
                                         msg.setFont(Font.font("Helvetica", FontWeight.NORMAL, 12));
-                                        chatText.getChildren().addAll(nickname, msg);
+                                        Text time = new Text(sdf.format(new Date())+ " ");
+                                        chatText.getChildren().addAll(time, nickname, msg);
                                         sp.setVvalue( 1.0d );
                                     } else if (token[1].startsWith("приватно")) {
                                         token = str.split("\\s", 5);
@@ -213,13 +225,15 @@ public class Controller implements Initializable {
                                         nickname.setFill(Color.rgb(255, 99, 71));
                                         Text msg = new Text(token[4] + "\n");
                                         msg.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                        chatText.getChildren().addAll(nickname, msg);
+                                        Text time = new Text(sdf.format(new Date())+ " ");
+                                        chatText.getChildren().addAll(time, nickname, msg);
                                         sp.setVvalue( 1.0d );
                                     } else {
                                         Text text1 = new Text(str + "\n");
                                         text1.setFill(Color.BLACK);
                                         text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                        chatText.getChildren().addAll(text1);
+                                        Text time = new Text(sdf.format(new Date()) + " ");
+                                        chatText.getChildren().addAll(time, text1);
                                         sp.setVvalue( 1.0d );
                                     }
                                 }
@@ -368,5 +382,29 @@ public class Controller implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private Stage createChatArchiveWindow() {
+        Stage stage = new Stage();
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/story.fxml"));
+            Parent root = fxmlLoader.load();
+
+            stage.setTitle("История сообщений чата");
+            stage.setScene(new Scene(root, 480, 360));
+            stage.initModality(Modality.NONE);
+
+            storyController = fxmlLoader.getController();
+            storyController.setController(this);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return stage;
+    }
+
+
+    public void openStory(ActionEvent actionEvent) {
+        chatArchive.show();
     }
 }

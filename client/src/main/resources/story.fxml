@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import java.net.URL?>
+<VBox alignment="center" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/10.0.2-internal" fx:controller="client.StoryController">
+    <stylesheets>
+        <URL value="@/css/style.css" />
+    </stylesheets>
+
+     <TextArea fx:id="msgArchive" VBox.vgrow="ALWAYS" HBox.hgrow="ALWAYS" editable="false"/>
+    <HBox HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
+        <Button alignment="CENTER" minWidth="200" onAction="#saveToFile" text="Сохранить в файл" textAlignment="CENTER" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" fx:id="saveButton"/>
+        <Button alignment="CENTER" minWidth="200" onAction="#clickCancelBtn" text="Закрыть" textAlignment="CENTER" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" fx:id="cancelButton"/>
+    </HBox>
+
+
+</VBox>

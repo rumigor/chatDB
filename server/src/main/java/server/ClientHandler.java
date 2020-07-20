@@ -95,6 +95,9 @@ public class ClientHandler {
                                 }
                                 server.changeNick(this, token[1]);
                             }
+                            if (str.startsWith("/loadStory")) {
+                                server.loadStory(this);
+                            }
                         }
                         else {
                             server.broadcastMsg(str, this);
@@ -102,7 +105,11 @@ public class ClientHandler {
                     }
                 } catch (SocketTimeoutException e) {
                     System.out.println("Клиент не активен более 120 секунд");
-                    server.privateMsg("Сервер", this, "Соедиение с сервером прервано из-за неактивности клиента");
+                    try {
+                        server.privateMsg("Сервер", this, "Соедиение с сервером прервано из-за неактивности клиента");
+                    } catch (SQLException throwables) {
+                        throwables.printStackTrace();
+                    }
                     sendMsg("/end");
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -110,7 +117,13 @@ public class ClientHandler {
                     throwables.printStackTrace();
                 } finally {
                     System.out.println("Клиент отключился");
-                    if (isSubscribed) {server.unsubscribe(this);}
+                    if (isSubscribed) {
+                        try {
+                            server.unsubscribe(this);
+                        } catch (SQLException throwables) {
+                            throwables.printStackTrace();
+                        }
+                    }
                     try {
                         in.close();
                         out.close();
