@@ -26,7 +26,7 @@ public class ClientHandler {
 
             new Thread(() -> {
                 try {
-                    socket.setSoTimeout(5000); //проверяем активность клиента
+                    socket.setSoTimeout(120000); //проверяем активность клиента
                     while (true) {
                         String str = in.readUTF();
                         if (str.startsWith("/auth ")) {
@@ -95,6 +95,9 @@ public class ClientHandler {
                                 }
                                 server.changeNick(this, token[1]);
                             }
+                            if (str.startsWith("/loadStory")) {
+                                server.loadStory(this);  //подготовка истории сообщений
+                            }
                         }
                         else {
                             server.broadcastMsg(str, this);
@@ -102,15 +105,23 @@ public class ClientHandler {
                     }
                 } catch (SocketTimeoutException e) {
                     System.out.println("Клиент не активен более 120 секунд");
-                    server.privateMsg("сервера", this, "Соедиение с сервером прервано из-за неактивности клиента");
+                    try {
+                        server.privateMsg("Сервер", this, "Соедиение с сервером прервано из-за неактивности клиента");
+                    } catch (SQLException throwables) {
+                        throwables.printStackTrace();
+                    }
                     sendMsg("/end");
-                } catch (IOException e) {
+                } catch (IOException | SQLException e) {
                     e.printStackTrace();
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
                 } finally {
                     System.out.println("Клиент отключился");
-                    if (isSubscribed) {server.unsubscribe(this);}
+                    if (isSubscribed) {
+                        try {
+                            server.unsubscribe(this);
+                        } catch (SQLException throwables) {
+                            throwables.printStackTrace();
+                        }
+                    }
                     try {
                         in.close();
                         out.close();
