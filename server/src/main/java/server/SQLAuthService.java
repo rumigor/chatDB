@@ -1,11 +1,11 @@
 package server;
 
 import java.sql.*;
-import java.util.List;
+
 
 public class SQLAuthService implements  AuthService{
-    private Connection connection;
-    private Statement stmt;
+    protected Connection connection;
+    protected Statement stmt;
     private PreparedStatement authValidation;
     private PreparedStatement registration;
     private PreparedStatement changeNickName;
@@ -14,7 +14,10 @@ public class SQLAuthService implements  AuthService{
         connect();
         prepareAllStatement();
     }
-
+    @Override
+    public Connection getConnection() {
+        return connection;
+    }
 
     private void connect() throws ClassNotFoundException, SQLException {
         Class.forName("org.sqlite.JDBC");

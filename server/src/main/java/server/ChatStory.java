@@ -6,45 +6,32 @@ import java.util.List;
 
 public class ChatStory {
     private Connection connection;
-    private Statement stmt;
     private PreparedStatement addToStory;
     private PreparedStatement getStory;
+    private PreparedStatement getNickName;
+    private PreparedStatement getId;
 
-    public ChatStory() throws SQLException, ClassNotFoundException {
-        connect();
+
+    public ChatStory(Connection connection) throws SQLException, ClassNotFoundException {
+        this.connection = connection;
         prepareAllStatement();
     }
 
-
-    private void connect() throws ClassNotFoundException, SQLException {
-        Class.forName("org.sqlite.JDBC");
-        connection = DriverManager.getConnection("jdbc:sqlite:chatstory.db");
-        stmt = connection.createStatement();
-    }
-
-    public void disconnect() {
-        try {
-            stmt.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        try {
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
     public void prepareAllStatement() throws SQLException {
-        addToStory = connection.prepareStatement("INSERT INTO story (time, nickname, message, private) VALUES (?, ?, ?, ?);");
-        getStory = connection.prepareStatement("SELECT time, nickname, message, private FROM story");
+        addToStory = connection.prepareStatement("INSERT INTO story (receiverID, senderID, time, message) VALUES (?, ?, ?, ?);");
+        getStory = connection.prepareStatement("SELECT receiverID, senderID, time, message FROM story");
+        getId = connection.prepareStatement("SELECT id FROM chatusers WHERE nickname = ?");
+        getNickName = connection.prepareStatement("SELECT nickname FROM chatusers WHERE id = ?");
     }
 
-    public void messageToStory(String time, String name, String msg, String privateNick) throws SQLException { //сохраняем сообщения в БД
+    public void messageToStory(String receiverNick, String senderNick, String time, String msg) throws SQLException { //сохраняем сообщения в БД
         connection.setAutoCommit(false);
-        addToStory.setString(1, time);
-        addToStory.setString(2, name);
-        addToStory.setString(3, msg);
-        addToStory.setString(4, privateNick);
+        int receiverID = getIdNumber(receiverNick);
+        int senderID = getIdNumber(senderNick);
+        addToStory.setInt(1, receiverID);
+        addToStory.setInt(2, senderID);
+        addToStory.setString(3, time);
+        addToStory.setString(4, msg);
         addToStory.executeUpdate();
         connection.commit();
     }
@@ -53,18 +40,45 @@ public class ChatStory {
         StringBuilder chatStory = new StringBuilder();
         connection.setAutoCommit(false);
         ResultSet story = getStory.executeQuery();
+        String receiverNick;
+        String senderNick;
         while (story.next()) {
-            if (story.getString(4) == null) {
-                String msgToAll = String.format("%s %s: %s", story.getString(1), story.getString(2), story.getString(3));
-                chatStory.append(msgToAll + "\n");
+            if (story.getInt(1) == 0) {
+                senderNick = getNick(story.getInt(2));
+                String msgToAll = String.format("%s %s: %s", story.getString(3), senderNick, story.getString(4));
+                chatStory.append(msgToAll).append("\n");
             }
-            else if (story.getString(2).equals(nickname) || story.getString(4).equals(nickname)){
-                String prvMsg = String.format("%s %s %s %s: %s", story.getString(1), story.getString(4), "лично для", story.getString(2), story.getString(3));
-                chatStory.append(prvMsg + "\n");
+            else {
+                receiverNick = getNick(story.getInt(1));
+                senderNick = getNick(story.getInt(2));
+                if (receiverNick.equals(nickname) || senderNick.equals(nickname)) {
+                    String prvMsg = String.format("%s %s %s %s: %s", story.getString(3), senderNick, "приватно для", receiverNick, story.getString(4));
+                    chatStory.append(prvMsg).append("\n");
+                }
             }
-        }
+            }
         connection.commit();
         story.close();
         return chatStory.toString();
+    }
+
+    private String getNick(int id) throws SQLException {
+        getNickName.setInt(1, id);
+        ResultSet nickById = getNickName.executeQuery();
+        String nickName = null;
+        while (nickById.next()) {
+            nickName = nickById.getString(1);
+        }
+        return nickName;
+    }
+
+    private int getIdNumber (String nickname) throws SQLException {
+        getId.setString(1, nickname);
+        ResultSet id = getId.executeQuery();
+        int idNumber = 0;
+        while (id.next()) {
+            idNumber = id.getInt(1);
+        }
+        return idNumber;
     }
 }

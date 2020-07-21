@@ -1,7 +1,6 @@
 package server;
 
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,5 +57,12 @@ public class SimpleAuthService implements AuthService {
     }
 
     @Override
-    public boolean changeNick(String oldNick, String newNick){return true;};
+    public boolean changeNick(String oldNick, String newNick){return true;}
+
+    @Override
+    public Connection getConnection() {
+        return null;
+    }
+
+    ;
 }
