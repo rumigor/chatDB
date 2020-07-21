@@ -20,6 +20,9 @@
                 <MenuItem onAction="#pasteText" text="Вставить" />
                 <MenuItem onAction="#cutText" text="Вырезать" />
             </Menu>
+            <Menu text="История чата">
+                <MenuItem onAction="#openStory" text="Открыть историю"/>
+            </Menu>
         </MenuBar>
     <HBox fx:id="authPanel">
         <TextField fx:id="loginField" HBox.hgrow="ALWAYS" promptText="login"/>
