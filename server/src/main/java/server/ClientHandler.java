@@ -26,7 +26,7 @@ public class ClientHandler {
 
             new Thread(() -> {
                 try {
-                    socket.setSoTimeout(5000); //проверяем активность клиента
+                    socket.setSoTimeout(120000); //проверяем активность клиента
                     while (true) {
                         String str = in.readUTF();
                         if (str.startsWith("/auth ")) {
@@ -86,14 +86,28 @@ public class ClientHandler {
                                     continue;
                                 }
 
-                                server.privateMsg( token[1], this, token[2]);
+                                server.privateMsg(token[1], this, token[2]);
                             }
                             if (str.startsWith("/chgnick ")) {
                                 String[] token = str.split("\\s", 2);
                                 if (token.length < 2) {
                                     continue;
                                 }
-                                server.changeNick(this, token[1]);
+                                if (token[1].contains(" ")) {
+                                    sendMsg("Ник не может содержать пробелов");
+                                    continue;
+                                }
+                                if (server.getAuthService().changeNick(this.nick, token[1])) {
+                                    sendMsg("/yournickis " + token[1]);
+                                    sendMsg("Ваш ник изменен на " + token[1]);
+                                    this.nick = token[1];
+                                    server.broadcastClientsList();
+                                } else {
+                                    sendMsg("Не удалось изменить ник. Ник " + token[1] + " уже существует");
+                                }
+                                if (str.startsWith("/loadStory")) {
+                                    server.loadStory(this);  //подготовка истории сообщений
+                                }
                             }
                         }
                         else {
@@ -102,15 +116,23 @@ public class ClientHandler {
                     }
                 } catch (SocketTimeoutException e) {
                     System.out.println("Клиент не активен более 120 секунд");
-                    server.privateMsg("сервера", this, "Соедиение с сервером прервано из-за неактивности клиента");
+                    try {
+                        server.privateMsg("Сервер", this, "Соедиение с сервером прервано из-за неактивности клиента");
+                    } catch (SQLException throwables) {
+                        throwables.printStackTrace();
+                    }
                     sendMsg("/end");
-                } catch (IOException e) {
+                } catch (IOException | SQLException e) {
                     e.printStackTrace();
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
                 } finally {
                     System.out.println("Клиент отключился");
-                    if (isSubscribed) {server.unsubscribe(this);}
+                    if (isSubscribed) {
+                        try {
+                            server.unsubscribe(this);
+                        } catch (SQLException throwables) {
+                            throwables.printStackTrace();
+                        }
+                    }
                     try {
                         in.close();
                         out.close();

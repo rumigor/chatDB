@@ -17,13 +17,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class Controller implements Initializable {
 //    @FXML
@@ -52,7 +50,7 @@ public class Controller implements Initializable {
 
     private final int PORT = 8189;
     private final String IP_ADDRESS = "localhost";
-    private final String CHAT_TITLE_EMPTY = "Java-chat v.1.0";
+    private final String CHAT_TITLE_EMPTY = "Java-chat v.1.1";
 
 
 
@@ -64,7 +62,11 @@ public class Controller implements Initializable {
     private String nick;
     private Stage stage;
     private Stage regStage;
+    private Stage chatArchive;
+    private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
     RegController regController;
+    StoryController storyController;
+    private String login;
 
 
 
@@ -105,7 +107,9 @@ public class Controller implements Initializable {
         });
         setAuthenticated(false);
         regStage = createRegWindow();
+        chatArchive = createChatArchiveWindow();
     }
+
 
     private void connect() {
         try {
@@ -149,7 +153,24 @@ public class Controller implements Initializable {
                             break;
                         }
                     }
-
+                    File file = new File("history_"+login+".txt");
+                    if (file.exists()) {
+                        BufferedReader reader = new BufferedReader(new FileReader(file));
+                        List<String> messages = new ArrayList<>();
+                        while (reader.ready()) {
+                            messages.add(reader.readLine());
+                        }
+                        int index = 0;
+                        if (messages.size() > 100) {index = messages.size() - 100;}
+                        Platform.runLater(() -> chatText.getChildren().add(new Text("----Предыдщие сессии чата----\n")));
+                        for (int i = index; i < messages.size() ; i++) {
+                            Text arhiveText = new Text(messages.get(i) + "\n");
+                            Platform.runLater(() -> chatText.getChildren().add(arhiveText));
+                        }
+                        Platform.runLater(() -> chatText.getChildren().add(new Text("----Текущая сессия чата----\n")));
+                        reader.close();
+                    }
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
                     while (!socket.isClosed()) {
                         String str = in.readUTF();
                         if (str.startsWith("/")) {
@@ -170,24 +191,30 @@ public class Controller implements Initializable {
                                 });
 
                             }
-                            if (str.startsWith("/chgnick")) {
-                                String[] token = str.split("\\s", 2);
-                                nick = token[2];
+                            if (str.startsWith("/yournickis ")) {
+                                nick = str.split("\\s")[1];
                                 setTitle(nick);
+                            }
+                            if (str.startsWith("/loadStory")){
+                                String[] token = str.split("\\s", 2);
+                                storyController.msgArchive.setText(token[1]); //загружаем историю в текстАрею окна Истории сообщений
                             }
                         }
                         else {
                             Platform.runLater(() -> {
-                                if (str.startsWith("Сообщение от")) {
-                                    String[] token = str.split("\\s", 4);
-                                    Text text1 = new Text(str + "\n");
+                                String[] token = str.split("\\s", 2);
+                                if (str.startsWith("Сервер")) {
+                                    Text time = new Text(sdf.format(new Date())+ " ");
+                                    Text textServ = new Text(token[0]+" ");
+                                    textServ.setFill(Color.BLACK);
+                                    textServ.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
+                                    Text text1 = new Text(token[1] + "\n");
                                     text1.setFill(Color.BLACK);
                                     text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                    chatText.getChildren().addAll(text1);
+                                    chatText.getChildren().addAll(time, textServ, text1);
                                     sp.setVvalue( 1.0d );
                                 }
                                 else {
-                                    String[] token = str.split("\\s", 2);
                                     if (token[0].endsWith(":")) {
                                         Text nickname = new Text();
                                         if (token[0].equals(nick+":")) {
@@ -201,8 +228,14 @@ public class Controller implements Initializable {
                                         Text msg = new Text(token[1] + "\n");
                                         msg.setFill(Color.BLACK);
                                         msg.setFont(Font.font("Helvetica", FontWeight.NORMAL, 12));
-                                        chatText.getChildren().addAll(nickname, msg);
+                                        Text time = new Text(sdf.format(new Date())+ " ");
+                                        chatText.getChildren().addAll(time, nickname, msg);
                                         sp.setVvalue( 1.0d );
+                                        try {
+                                            writer.write(sdf.format(new Date())+ " " + str + "\n");
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                     } else if (token[1].startsWith("приватно")) {
                                         token = str.split("\\s", 5);
                                         String nickText = String.format("%s %s %s %s ", token[0], token[1], token[2], token[3]);
@@ -211,19 +244,32 @@ public class Controller implements Initializable {
                                         nickname.setFill(Color.rgb(255, 99, 71));
                                         Text msg = new Text(token[4] + "\n");
                                         msg.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                        chatText.getChildren().addAll(nickname, msg);
+                                        Text time = new Text(sdf.format(new Date())+ " ");
+                                        chatText.getChildren().addAll(time, nickname, msg);
                                         sp.setVvalue( 1.0d );
+                                        try {
+                                            writer.write(sdf.format(new Date())+ " " + str + "\n");
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                     } else {
                                         Text text1 = new Text(str + "\n");
                                         text1.setFill(Color.BLACK);
                                         text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                        chatText.getChildren().addAll(text1);
+                                        Text time = new Text(sdf.format(new Date()) + " ");
+                                        chatText.getChildren().addAll(time, text1);
                                         sp.setVvalue( 1.0d );
+                                        try {
+                                            writer.write(sdf.format(new Date())+ " " + str + "\n");
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                     }
                                 }
                             });
                         }
                     }
+                    writer.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -268,6 +314,7 @@ public class Controller implements Initializable {
 
         try {
             out.writeUTF(String.format("/auth %s %s", loginField.getText().trim(), passwordField.getText().trim()));
+            login = loginField.getText().trim();
             passwordField.clear();
         } catch (IOException e) {
             e.printStackTrace();
@@ -275,9 +322,7 @@ public class Controller implements Initializable {
     }
 
     private void setTitle(String nick) {
-        Platform.runLater(() -> {
-            stage.setTitle(CHAT_TITLE_EMPTY + " : " + nick);
-        });
+        Platform.runLater(() -> stage.setTitle(CHAT_TITLE_EMPTY + " : " + nick));
     }
 
 
@@ -297,8 +342,6 @@ public class Controller implements Initializable {
         result.ifPresent(name -> {
             try {
                 out.writeUTF("/chgnick " + name);
-                nick = name;
-                setTitle(nick);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -366,5 +409,30 @@ public class Controller implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private Stage createChatArchiveWindow() { //создаем окно для истории сообщений
+        Stage stage = new Stage();
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/story.fxml"));
+            Parent root = fxmlLoader.load();
+
+            stage.setTitle("История сообщений чата");
+            stage.setScene(new Scene(root, 480, 360));
+            stage.initModality(Modality.NONE);
+
+            storyController = fxmlLoader.getController();
+            storyController.setController(this);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return stage;
+    }
+
+
+    public void openStory(ActionEvent actionEvent) throws IOException { //открываем историю сообщений
+        chatArchive.show();
+        out.writeUTF("/loadStory");
     }
 }
