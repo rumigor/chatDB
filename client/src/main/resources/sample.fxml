@@ -21,7 +21,7 @@
                 <MenuItem onAction="#cutText" text="Вырезать" />
             </Menu>
             <Menu text="История чата">
-                <MenuItem onAction="#openStory" text="Открыть историю"/>
+                <MenuItem onAction="#openStory" text="Загрузить историю сообщений с сервера"/>
             </Menu>
         </MenuBar>
     <HBox fx:id="authPanel">

@@ -17,15 +17,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Optional;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class Controller implements Initializable {
 //    @FXML
@@ -70,6 +66,7 @@ public class Controller implements Initializable {
     private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
     RegController regController;
     StoryController storyController;
+    private String login;
 
 
 
@@ -156,7 +153,24 @@ public class Controller implements Initializable {
                             break;
                         }
                     }
-
+                    File file = new File("history_"+login+".txt");
+                    if (file.exists()) {
+                        BufferedReader reader = new BufferedReader(new FileReader(file));
+                        List<String> messages = new ArrayList<>();
+                        while (reader.ready()) {
+                            messages.add(reader.readLine());
+                        }
+                        int index = 0;
+                        if (messages.size() > 100) {index = messages.size() - 100;}
+                        Platform.runLater(() -> chatText.getChildren().add(new Text("----Предыдщие сессии чата----\n")));
+                        for (int i = index; i < messages.size() ; i++) {
+                            Text arhiveText = new Text(messages.get(i) + "\n");
+                            Platform.runLater(() -> chatText.getChildren().add(arhiveText));
+                        }
+                        Platform.runLater(() -> chatText.getChildren().add(new Text("----Текущая сессия чата----\n")));
+                        reader.close();
+                    }
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
                     while (!socket.isClosed()) {
                         String str = in.readUTF();
                         if (str.startsWith("/")) {
@@ -177,14 +191,13 @@ public class Controller implements Initializable {
                                 });
 
                             }
-                            if (str.startsWith("/chgnick")) {
-                                String[] token = str.split("\\s", 2);
-                                nick = token[2];
+                            if (str.startsWith("/yournickis ")) {
+                                nick = str.split("\\s")[1];
                                 setTitle(nick);
                             }
                             if (str.startsWith("/loadStory")){
                                 String[] token = str.split("\\s", 2);
-                                storyController.msgArchive.appendText(token[1]); //загружаем историю в текстАрею окна Истории сообщений
+                                storyController.msgArchive.setText(token[1]); //загружаем историю в текстАрею окна Истории сообщений
                             }
                         }
                         else {
@@ -218,6 +231,11 @@ public class Controller implements Initializable {
                                         Text time = new Text(sdf.format(new Date())+ " ");
                                         chatText.getChildren().addAll(time, nickname, msg);
                                         sp.setVvalue( 1.0d );
+                                        try {
+                                            writer.write(sdf.format(new Date())+ " " + str + "\n");
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                     } else if (token[1].startsWith("приватно")) {
                                         token = str.split("\\s", 5);
                                         String nickText = String.format("%s %s %s %s ", token[0], token[1], token[2], token[3]);
@@ -229,6 +247,11 @@ public class Controller implements Initializable {
                                         Text time = new Text(sdf.format(new Date())+ " ");
                                         chatText.getChildren().addAll(time, nickname, msg);
                                         sp.setVvalue( 1.0d );
+                                        try {
+                                            writer.write(sdf.format(new Date())+ " " + str + "\n");
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                     } else {
                                         Text text1 = new Text(str + "\n");
                                         text1.setFill(Color.BLACK);
@@ -236,11 +259,17 @@ public class Controller implements Initializable {
                                         Text time = new Text(sdf.format(new Date()) + " ");
                                         chatText.getChildren().addAll(time, text1);
                                         sp.setVvalue( 1.0d );
+                                        try {
+                                            writer.write(sdf.format(new Date())+ " " + str + "\n");
+                                        } catch (IOException e) {
+                                            e.printStackTrace();
+                                        }
                                     }
                                 }
                             });
                         }
                     }
+                    writer.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -285,6 +314,7 @@ public class Controller implements Initializable {
 
         try {
             out.writeUTF(String.format("/auth %s %s", loginField.getText().trim(), passwordField.getText().trim()));
+            login = loginField.getText().trim();
             passwordField.clear();
         } catch (IOException e) {
             e.printStackTrace();
@@ -292,9 +322,7 @@ public class Controller implements Initializable {
     }
 
     private void setTitle(String nick) {
-        Platform.runLater(() -> {
-            stage.setTitle(CHAT_TITLE_EMPTY + " : " + nick);
-        });
+        Platform.runLater(() -> stage.setTitle(CHAT_TITLE_EMPTY + " : " + nick));
     }
 
 
@@ -314,8 +342,6 @@ public class Controller implements Initializable {
         result.ifPresent(name -> {
             try {
                 out.writeUTF("/chgnick " + name);
-                nick = name;
-                setTitle(nick);
             } catch (IOException e) {
                 e.printStackTrace();
             }

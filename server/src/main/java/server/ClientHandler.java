@@ -86,17 +86,28 @@ public class ClientHandler {
                                     continue;
                                 }
 
-                                server.privateMsg( token[1], this, token[2]);
+                                server.privateMsg(token[1], this, token[2]);
                             }
                             if (str.startsWith("/chgnick ")) {
                                 String[] token = str.split("\\s", 2);
                                 if (token.length < 2) {
                                     continue;
                                 }
-                                server.changeNick(this, token[1]);
-                            }
-                            if (str.startsWith("/loadStory")) {
-                                server.loadStory(this);  //подготовка истории сообщений
+                                if (token[1].contains(" ")) {
+                                    sendMsg("Ник не может содержать пробелов");
+                                    continue;
+                                }
+                                if (server.getAuthService().changeNick(this.nick, token[1])) {
+                                    sendMsg("/yournickis " + token[1]);
+                                    sendMsg("Ваш ник изменен на " + token[1]);
+                                    this.nick = token[1];
+                                    server.broadcastClientsList();
+                                } else {
+                                    sendMsg("Не удалось изменить ник. Ник " + token[1] + " уже существует");
+                                }
+                                if (str.startsWith("/loadStory")) {
+                                    server.loadStory(this);  //подготовка истории сообщений
+                                }
                             }
                         }
                         else {
