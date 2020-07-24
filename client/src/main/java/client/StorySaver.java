@@ -42,7 +42,11 @@ public class StorySaver {
                 Text arhiveText = new Text(messages.get(i) + "\n");
                 Platform.runLater(() -> chatText.getChildren().add(arhiveText));
             }
-            Platform.runLater(() -> chatText.getChildren().add(new Text("----Текущая сессия чата----\n")));
+            Platform.runLater(() -> {
+                chatText.getChildren().add(new Text("----Текущая сессия чата----\n"));
+                controller.sp.setVvalue( 1.0d );
+            });
+
             reader.close();
         }
     }
