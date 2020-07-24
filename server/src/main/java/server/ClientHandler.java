@@ -49,7 +49,7 @@ public class ClientHandler {
                                     System.out.printf("Клиент %s подключился \n", nick);
                                     break;
                                 } else {
-                                    sendMsg("С этим логином уже авторизовались");
+                                    sendMsg("C этим логином уже авторизовались");
                                 }
                             } else {
                                 sendMsg("Неверный логин / пароль");
@@ -94,16 +94,17 @@ public class ClientHandler {
                                     continue;
                                 }
                                 if (token[1].contains(" ")) {
-                                    sendMsg("Ник не может содержать пробелов");
+                                    sendMsg("Сервер: ник не может содержать пробелов");
                                     continue;
                                 }
                                 if (server.getAuthService().changeNick(this.nick, token[1])) {
                                     sendMsg("/yournickis " + token[1]);
-                                    sendMsg("Ваш ник изменен на " + token[1]);
+                                    sendMsg("Сервер: Ваш ник изменен на " + token[1]);
+                                    server.broadcastMsg(this.nick + " изменил ник на " + token[1], this, true);
                                     this.nick = token[1];
                                     server.broadcastClientsList();
                                 } else {
-                                    sendMsg("Не удалось изменить ник. Ник " + token[1] + " уже существует");
+                                    sendMsg("Сервер: не удалось изменить ник. Ник " + token[1] + " уже существует");
                                 }
                                 if (str.startsWith("/loadStory")) {
                                     server.loadStory(this);  //подготовка истории сообщений
@@ -111,7 +112,7 @@ public class ClientHandler {
                             }
                         }
                         else {
-                            server.broadcastMsg(str, this);
+                            server.broadcastMsg(str, this, false);
                         }
                     }
                 } catch (SocketTimeoutException e) {

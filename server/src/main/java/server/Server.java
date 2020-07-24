@@ -52,12 +52,17 @@ public class Server {
         }
     }
 
-    void broadcastMsg(String msg, ClientHandler sender) throws SQLException {
+    void broadcastMsg(String msg, ClientHandler sender, boolean isServer) throws SQLException {
         String message = msg;
-        if (!msg.startsWith(sender.getNick())) {
-             message = String.format("%s: %s", sender.getNick(), msg);
-             chatStory.messageToStory("null", sender.getNick(), sdf.format(new Date()), msg); //копируем сообщение в историю
+        String nick;
+        if (isServer) {
+            nick = "Сервер";
         }
+        else  {
+            nick = sender.getNick();
+        }
+        message = String.format("%s: %s", nick, msg);
+        chatStory.messageToStory("null", nick, sdf.format(new Date()), msg); //копируем сообщение в историю
         for (ClientHandler client : clients) {
                 client.sendMsg(message);
             }
@@ -77,7 +82,7 @@ public class Server {
                 if (nickname.equals(anotherClient.getNick())) {
                     anotherClient.sendMsg(message);
                     client.sendMsg(message);
-                    chatStory.messageToStory(nickname, client.getNick(), sdf.format(new Date()), msg); //копируем сообщение в историю
+//                    chatStory.messageToStory(nickname, client.getNick(), sdf.format(new Date()), msg); //копируем сообщение в историю
                     isNickNameValid = true;
                     break;
                 }
@@ -91,28 +96,28 @@ public class Server {
 
     public void subscribe(ClientHandler clientHandler) throws SQLException {
         clients.add(clientHandler);
-        broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler);
-        chatStory.messageToStory("null", "Сервер", sdf.format(new Date()), clientHandler.getNick()+" подключился к чату!"); //копируем сообщение в историю
+        broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler, true);
+//        chatStory.messageToStory("null", "Сервер", sdf.format(new Date()), clientHandler.getNick()+" подключился к чату!"); //копируем сообщение в историю
         privateMsg("Сервер", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
                 "Для отправки приватного сообщения перед текстом сообщения введите: /w usernickname\nДля выхода из чата направьте команду: /end");
         broadcastClientsList();
     }
 
     public void unsubscribe(ClientHandler clientHandler) throws SQLException {
-        broadcastMsg(clientHandler.getNick() + " вышел из чата", clientHandler);
+        broadcastMsg(clientHandler.getNick() + " вышел из чата", clientHandler, true);
         chatStory.messageToStory("null", "Сервер", sdf.format(new Date()), clientHandler.getNick() + " вышел из чата"); //копируем сообщение в историю
         clients.remove(clientHandler);
         broadcastClientsList();
     }
-    public void changeNick(ClientHandler client, String newNick) throws SQLException {
-        if (authService.changeNick(client.getNick(), newNick)) {
-            System.out.println(client.getNick() + " " + newNick);
-            broadcastMsg(client.getNick() + " сменил ник на " + newNick, client);
-            chatStory.messageToStory("null", "Сервер", sdf.format(new Date()), client.getNick()+" сменил ник на " + newNick); //копируем сообщение в историю
-            client.setNick(newNick);
-            broadcastClientsList();
-        } else {privateMsg("Сервер", client, "данный никнейм уже занят");}
-    }
+//    public void changeNick(ClientHandler client, String newNick) throws SQLException {
+//        if (authService.changeNick(client.getNick(), newNick)) {
+//            System.out.println(client.getNick() + " " + newNick);
+//            broadcastMsg(client.getNick() + " сменил ник на " + newNick, client);
+//            chatStory.messageToStory("null", "Сервер", sdf.format(new Date()), client.getNick()+" сменил ник на " + newNick); //копируем сообщение в историю
+//            client.setNick(newNick);
+//            broadcastClientsList();
+//        } else {privateMsg("Сервер", client, "данный никнейм уже занят");}
+//    }
 
     public void broadcastClientsList() {
         StringBuilder sb = new StringBuilder("/clients ");

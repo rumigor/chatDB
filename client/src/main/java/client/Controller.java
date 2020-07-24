@@ -67,7 +67,7 @@ public class Controller implements Initializable {
     RegController regController;
     StoryController storyController;
     private String login;
-
+    private StorySaver storySaver;
 
 
     public void setAuthenticated(boolean authenticated) {
@@ -128,13 +128,7 @@ public class Controller implements Initializable {
                             setAuthenticated(true);
                             break;
                         } else if (str.equals("Неверный логин / пароль") || str.equals("С этим логином уже авторизовались")) {
-                            Platform.runLater(() -> {
-                                Text text1 = new Text(str + "\n");
-                                text1.setFill(Color.BLACK);
-                                text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                chatText.getChildren().addAll(text1);
-                                sp.setVvalue( 1.0d );
-                            });
+                            systemMsg(str);
                         }
 
                         if (str.startsWith("/regresult ")) {
@@ -153,24 +147,9 @@ public class Controller implements Initializable {
                             break;
                         }
                     }
-                    File file = new File("history_"+login+".txt");
-                    if (file.exists()) {
-                        BufferedReader reader = new BufferedReader(new FileReader(file));
-                        List<String> messages = new ArrayList<>();
-                        while (reader.ready()) {
-                            messages.add(reader.readLine());
-                        }
-                        int index = 0;
-                        if (messages.size() > 100) {index = messages.size() - 100;}
-                        Platform.runLater(() -> chatText.getChildren().add(new Text("----Предыдщие сессии чата----\n")));
-                        for (int i = index; i < messages.size() ; i++) {
-                            Text arhiveText = new Text(messages.get(i) + "\n");
-                            Platform.runLater(() -> chatText.getChildren().add(arhiveText));
-                        }
-                        Platform.runLater(() -> chatText.getChildren().add(new Text("----Текущая сессия чата----\n")));
-                        reader.close();
-                    }
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
+                    storySaver = new StorySaver(this, new File("history_"+login+".txt"), chatText);
+                    storySaver.readFile();
+
                     while (!socket.isClosed()) {
                         String str = in.readUTF();
                         if (str.startsWith("/")) {
@@ -204,76 +183,24 @@ public class Controller implements Initializable {
                             Platform.runLater(() -> {
                                 String[] token = str.split("\\s", 2);
                                 if (str.startsWith("Сервер")) {
-                                    Text time = new Text(sdf.format(new Date())+ " ");
-                                    Text textServ = new Text(token[0]+" ");
-                                    textServ.setFill(Color.BLACK);
-                                    textServ.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
-                                    Text text1 = new Text(token[1] + "\n");
-                                    text1.setFill(Color.BLACK);
-                                    text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                    chatText.getChildren().addAll(time, textServ, text1);
-                                    sp.setVvalue( 1.0d );
+                                    printServerMsg(str, token);
                                 }
                                 else {
                                     if (token[0].endsWith(":")) {
-                                        Text nickname = new Text();
-                                        if (token[0].equals(nick+":")) {
-                                            nickname = new Text("Я: ");
-                                            nickname.setFill(Color.rgb(255,165,0));
-                                        } else {
-                                            nickname = new Text(token[0] + " ");
-                                            nickname.setFill(Color.rgb(50,205,50));
-                                        }
-                                        nickname.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
-                                        Text msg = new Text(token[1] + "\n");
-                                        msg.setFill(Color.BLACK);
-                                        msg.setFont(Font.font("Helvetica", FontWeight.NORMAL, 12));
-                                        Text time = new Text(sdf.format(new Date())+ " ");
-                                        chatText.getChildren().addAll(time, nickname, msg);
-                                        sp.setVvalue( 1.0d );
-                                        try {
-                                            writer.write(sdf.format(new Date())+ " " + str + "\n");
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
+                                       printMsg(str, token);
                                     } else if (token[1].startsWith("приватно")) {
-                                        token = str.split("\\s", 5);
-                                        String nickText = String.format("%s %s %s %s ", token[0], token[1], token[2], token[3]);
-                                        Text nickname = new Text(nickText);
-                                        nickname.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
-                                        nickname.setFill(Color.rgb(255, 99, 71));
-                                        Text msg = new Text(token[4] + "\n");
-                                        msg.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                        Text time = new Text(sdf.format(new Date())+ " ");
-                                        chatText.getChildren().addAll(time, nickname, msg);
-                                        sp.setVvalue( 1.0d );
-                                        try {
-                                            writer.write(sdf.format(new Date())+ " " + str + "\n");
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
-                                    } else {
-                                        Text text1 = new Text(str + "\n");
-                                        text1.setFill(Color.BLACK);
-                                        text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
-                                        Text time = new Text(sdf.format(new Date()) + " ");
-                                        chatText.getChildren().addAll(time, text1);
-                                        sp.setVvalue( 1.0d );
-                                        try {
-                                            writer.write(sdf.format(new Date())+ " " + str + "\n");
-                                        } catch (IOException e) {
-                                            e.printStackTrace();
-                                        }
+                                        printPrivateMsg(str);
                                     }
                                 }
                             });
                         }
                     }
-                    writer.close();
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     try {
+                        storySaver.getWriter().close();
                         in.close();
                         out.close();
                     } catch (IOException e) {
@@ -434,5 +361,67 @@ public class Controller implements Initializable {
     public void openStory(ActionEvent actionEvent) throws IOException { //открываем историю сообщений
         chatArchive.show();
         out.writeUTF("/loadStory");
+    }
+
+    public void systemMsg(String str){
+        Platform.runLater(() -> {
+            Text text1 = new Text(str + "\n");
+            text1.setFill(Color.BLACK);
+            text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
+            chatText.getChildren().addAll(text1);
+            sp.setVvalue( 1.0d );
+        });
+    }
+    public void printMsg(String str, String [] token){
+        Text time = new Text(sdf.format(new Date())+ " ");
+        Text nickname = new Text();
+        if (token[0].equals(nick+":")) {
+            nickname = new Text("Я: ");
+            nickname.setFill(Color.rgb(255,165,0));
+        } else {
+            nickname = new Text(token[0] + " ");
+            nickname.setFill(Color.rgb(50,205,50));
+        }
+        nickname.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
+        Text msg = new Text(token[1] + "\n");
+        msg.setFill(Color.BLACK);
+        msg.setFont(Font.font("Helvetica", FontWeight.NORMAL, 12));
+        chatText.getChildren().addAll(time, nickname, msg);
+        sp.setVvalue( 1.0d );
+        try {
+            storySaver.writeFile(sdf.format(new Date())+ " " + str + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void printPrivateMsg(String str){
+        String [] token = str.split("\\s", 5);
+        String nickText = String.format("%s %s %s %s ", token[0], token[1], token[2], token[3]);
+        Text nickname = new Text(nickText);
+        nickname.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
+        nickname.setFill(Color.rgb(255, 99, 71));
+        Text msg = new Text(token[4] + "\n");
+        msg.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
+        Text time = new Text(sdf.format(new Date())+ " ");
+        chatText.getChildren().addAll(time, nickname, msg);
+        sp.setVvalue( 1.0d );
+        try {
+            storySaver.writeFile(sdf.format(new Date())+ " " + str + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void printServerMsg(String str, String[] token){
+        Text time = new Text(sdf.format(new Date())+ " ");
+        Text textServ = new Text(token[0]+" ");
+        textServ.setFill(Color.BLACK);
+        textServ.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
+        Text text1 = new Text(token[1] + "\n");
+        text1.setFill(Color.BLACK);
+        text1.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
+        chatText.getChildren().addAll(time, textServ, text1);
+        sp.setVvalue( 1.0d );
     }
 }
