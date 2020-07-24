@@ -183,13 +183,18 @@ public class Controller implements Initializable {
                             Platform.runLater(() -> {
                                 String[] token = str.split("\\s", 2);
                                 if (str.startsWith("Сервер")) {
-                                    printServerMsg(str, token);
+                                    printServerMsg(token);
                                 }
                                 else {
                                     if (token[0].endsWith(":")) {
-                                       printMsg(str, token);
+                                       printMsg(token);
                                     } else if (token[1].startsWith("приватно")) {
                                         printPrivateMsg(str);
+                                    }
+                                    try {
+                                        storySaver.writeFile(sdf.format(new Date())+ " " + str + "\n");
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
                                     }
                                 }
                             });
@@ -372,9 +377,9 @@ public class Controller implements Initializable {
             sp.setVvalue( 1.0d );
         });
     }
-    public void printMsg(String str, String [] token){
+    public void printMsg(String [] token){
         Text time = new Text(sdf.format(new Date())+ " ");
-        Text nickname = new Text();
+        Text nickname;
         if (token[0].equals(nick+":")) {
             nickname = new Text("Я: ");
             nickname.setFill(Color.rgb(255,165,0));
@@ -388,11 +393,6 @@ public class Controller implements Initializable {
         msg.setFont(Font.font("Helvetica", FontWeight.NORMAL, 12));
         chatText.getChildren().addAll(time, nickname, msg);
         sp.setVvalue( 1.0d );
-        try {
-            storySaver.writeFile(sdf.format(new Date())+ " " + str + "\n");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void printPrivateMsg(String str){
@@ -406,14 +406,9 @@ public class Controller implements Initializable {
         Text time = new Text(sdf.format(new Date())+ " ");
         chatText.getChildren().addAll(time, nickname, msg);
         sp.setVvalue( 1.0d );
-        try {
-            storySaver.writeFile(sdf.format(new Date())+ " " + str + "\n");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
-    public void printServerMsg(String str, String[] token){
+    public void printServerMsg(String[] token){
         Text time = new Text(sdf.format(new Date())+ " ");
         Text textServ = new Text(token[0]+" ");
         textServ.setFill(Color.BLACK);

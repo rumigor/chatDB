@@ -30,8 +30,6 @@ public class ChatStory {
                 "WHERE senderID = (SELECT id FROM chatusers WHERE nickname=?)\n" +
                 "OR receiverID = (SELECT id FROM chatusers WHERE nickname=?)\n" +
                 "OR receiverID = (SELECT id FROM chatusers WHERE nickname= 'null')");
-//        getId = connection.prepareStatement("SELECT id FROM chatusers WHERE nickname = ?");
-//        getNickName = connection.prepareStatement("SELECT nickname FROM chatusers WHERE id = ?");
     }
 
     public void messageToStory(String receiverNick, String senderNick, String time, String msg) throws SQLException { //сохраняем сообщения в БД
@@ -50,24 +48,6 @@ public class ChatStory {
         getStory.setString(1, nickname);
         getStory.setString(2, nickname);
         ResultSet story = getStory.executeQuery();
-//        String receiverNick;
-//        String senderNick;
-//        while (story.next()) {
-//
-//            if (story.getInt(1) == 0) {
-//                senderNick = getNick(story.getInt(2));
-//                String msgToAll = String.format("%s %s: %s", story.getString(3), senderNick, story.getString(4));
-//                chatStory.append(msgToAll).append("\n");
-//            }
-//            else {
-//                receiverNick = getNick(story.getInt(1));
-//                senderNick = getNick(story.getInt(2));
-//                if (receiverNick.equals(nickname) || senderNick.equals(nickname)) {
-//                    String prvMsg = String.format("%s %s %s %s: %s", story.getString(3), senderNick, "приватно для", receiverNick, story.getString(4));
-//                    chatStory.append(prvMsg).append("\n");
-//                }
-//            }
-//            }
 
         while (story.next()) {
             String sender = story.getString(2);
@@ -90,23 +70,5 @@ public class ChatStory {
         return chatStory.toString();
     }
 
-//    private String getNick(int id) throws SQLException {
-//        getNickName.setInt(1, id);
-//        ResultSet nickById = getNickName.executeQuery();
-//        String nickName = null;
-//        while (nickById.next()) {
-//            nickName = nickById.getString(1);
-//        }
-//        return nickName;
-//    }
-//
-//    private int getIdNumber (String nickname) throws SQLException {
-//        getId.setString(1, nickname);
-//        ResultSet id = getId.executeQuery();
-//        int idNumber = 0;
-//        while (id.next()) {
-//            idNumber = id.getInt(1);
-//        }
-//        return idNumber;
-//    }
+
 }
