@@ -13,14 +13,12 @@ public class StorySaver {
     public Controller controller;
     public File file;
     public TextFlow chatText;
-    private BufferedReader reader;
     private BufferedWriter writer;
 
     public StorySaver(Controller controller, File file, TextFlow chatText) throws IOException {
         this.controller = controller;
         this.file = file;
         this.chatText = chatText;
-        this.reader = new BufferedReader(new FileReader(this.file));
         this.writer = new BufferedWriter(new FileWriter(this.file, true));
     }
 

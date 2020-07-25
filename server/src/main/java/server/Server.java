@@ -8,12 +8,15 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     protected List<ClientHandler> clients;
     private AuthService authService;
     private ChatStory chatStory;
     private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+    private ExecutorService executorService;
 
     public AuthService getAuthService() {
         return authService;
@@ -32,18 +35,24 @@ public class Server {
         try {
             server = new ServerSocket(PORT);
             System.out.println("Сервер запущен!");
+            /* ограничиваем количество подключений к серверу, чтобы сервер не упал, если число подключений превысит критическую массу
+            * либо просто хотим ограничить число участников чата*/
+            executorService = Executors.newFixedThreadPool(5);
 
             while (true) {
                 socket = server.accept();
                 System.out.println("Клиент подключился");
                 System.out.println("socket.getRemoteSocketAddress(): "+socket.getRemoteSocketAddress());
                 System.out.println("socket.getLocalSocketAddress() "+socket.getLocalSocketAddress());
-                new ClientHandler(this, socket);
+                Socket finalSocket = socket;
+                // --подключаем клиентов в разных потоках, чтобы снизить нагрузку на сервер
+                executorService.execute(new ClientHandler(this, finalSocket));
             }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
+                executorService.shutdown();
                 authService.disconnect();
                 server.close();
             } catch (IOException e) {
@@ -95,6 +104,7 @@ public class Server {
 
     public void subscribe(ClientHandler clientHandler) throws SQLException {
         clients.add(clientHandler);
+        System.out.println(Thread.currentThread().getName());
         broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler, true);
         privateMsg("Сервер", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
                 "Для отправки приватного сообщения перед текстом сообщения введите: /w usernickname\nДля выхода из чата направьте команду: /end");
