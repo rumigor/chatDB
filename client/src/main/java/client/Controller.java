@@ -282,6 +282,7 @@ public class Controller implements Initializable {
 
     public void offline(ActionEvent actionEvent) {
         try {
+            storySaver.getWriter().close();
             out.writeUTF("/end");
         } catch (IOException e) {
             e.printStackTrace();
@@ -387,10 +388,10 @@ public class Controller implements Initializable {
             nickname = new Text(token[0] + " ");
             nickname.setFill(Color.rgb(50,205,50));
         }
-        nickname.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
+        nickname.setFont(Font.font("Helvetica", FontWeight.BOLD, 14));
         Text msg = new Text(token[1] + "\n");
         msg.setFill(Color.BLACK);
-        msg.setFont(Font.font("Helvetica", FontWeight.NORMAL, 12));
+        msg.setFont(Font.font("Helvetica", FontWeight.NORMAL, 14));
         chatText.getChildren().addAll(time, nickname, msg);
         sp.setVvalue( 1.0d );
     }
@@ -399,10 +400,10 @@ public class Controller implements Initializable {
         String [] token = str.split("\\s", 5);
         String nickText = String.format("%s %s %s %s ", token[0], token[1], token[2], token[3]);
         Text nickname = new Text(nickText);
-        nickname.setFont(Font.font("Helvetica", FontWeight.BOLD, 12));
+        nickname.setFont(Font.font("Helvetica", FontWeight.BOLD, 14));
         nickname.setFill(Color.rgb(255, 99, 71));
         Text msg = new Text(token[4] + "\n");
-        msg.setFont(Font.font("Helvetica", FontPosture.ITALIC, 12));
+        msg.setFont(Font.font("Helvetica", FontPosture.ITALIC, 14));
         Text time = new Text(sdf.format(new Date())+ " ");
         chatText.getChildren().addAll(time, nickname, msg);
         sp.setVvalue( 1.0d );
