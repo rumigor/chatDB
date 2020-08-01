@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.*;
 
 public class Server {
     protected List<ClientHandler> clients;
@@ -17,12 +18,20 @@ public class Server {
     private ChatStory chatStory;
     private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
     private ExecutorService executorService;
+    private static final Logger logger = Logger.getLogger(Server.class.getName());
 
     public AuthService getAuthService() {
         return authService;
     }
 
-    public Server() throws SQLException, ClassNotFoundException {
+    public Server() throws SQLException, ClassNotFoundException, IOException {
+        Handler consoleHandler = new ConsoleHandler();
+        consoleHandler.setFormatter(new SimpleFormatter());
+        Handler fileHandler = new FileHandler("server.log", true);
+        fileHandler.setFormatter(new SimpleFormatter());
+        logger.addHandler(consoleHandler);
+        logger.addHandler(fileHandler);
+        logger.setUseParentHandlers(false);
         clients = new Vector<>();
         authService = new SQLAuthService();
         chatStory = new ChatStory(authService.getConnection());
@@ -34,21 +43,22 @@ public class Server {
 
         try {
             server = new ServerSocket(PORT);
-            System.out.println("Сервер запущен!");
+            logger.log(Level.INFO, "Сервер запущен!");
             /* ограничиваем количество подключений к серверу, чтобы сервер не упал, если число подключений превысит критическую массу
             * либо просто хотим ограничить число участников чата*/
             executorService = Executors.newFixedThreadPool(5);
 
             while (true) {
                 socket = server.accept();
-                System.out.println("Клиент подключился");
-                System.out.println("socket.getRemoteSocketAddress(): "+socket.getRemoteSocketAddress());
-                System.out.println("socket.getLocalSocketAddress() "+socket.getLocalSocketAddress());
+                logger.log(Level.INFO, "Клиент подключился");
+                logger.log(Level.INFO, "socket.getRemoteSocketAddress(): "+socket.getRemoteSocketAddress());
+                logger.log(Level.INFO, "socket.getLocalSocketAddress() "+socket.getLocalSocketAddress());
                 Socket finalSocket = socket;
                 // --подключаем клиентов в разных потоках, чтобы снизить нагрузку на сервер
                 executorService.execute(new ClientHandler(this, finalSocket));
             }
         } catch (IOException e) {
+            logger.log(Level.SEVERE, e.getMessage());
             e.printStackTrace();
         } finally {
             try {
@@ -56,6 +66,7 @@ public class Server {
                 authService.disconnect();
                 server.close();
             } catch (IOException e) {
+                logger.log(Level.SEVERE, e.getMessage());
                 e.printStackTrace();
             }
         }
@@ -104,7 +115,6 @@ public class Server {
 
     public void subscribe(ClientHandler clientHandler) throws SQLException {
         clients.add(clientHandler);
-        System.out.println(Thread.currentThread().getName());
         broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler, true);
         privateMsg("Сервер", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
                 "Для отправки приватного сообщения перед текстом сообщения введите: /w usernickname\nДля выхода из чата направьте команду: /end");
