@@ -4,20 +4,37 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.*;
 
 public class Server {
     protected List<ClientHandler> clients;
     private AuthService authService;
+    private ChatStory chatStory;
+    private SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+    private ExecutorService executorService;
+    private static final Logger logger = Logger.getLogger(Server.class.getName());
 
     public AuthService getAuthService() {
         return authService;
     }
 
-    public Server() throws SQLException, ClassNotFoundException {
+    public Server() throws SQLException, ClassNotFoundException, IOException {
+        Handler consoleHandler = new ConsoleHandler();
+        consoleHandler.setFormatter(new SimpleFormatter());
+        Handler fileHandler = new FileHandler("server.log", true);
+        fileHandler.setFormatter(new SimpleFormatter());
+        logger.addHandler(consoleHandler);
+        logger.addHandler(fileHandler);
+        logger.setUseParentHandlers(false);
         clients = new Vector<>();
         authService = new SQLAuthService();
+        chatStory = new ChatStory(authService.getConnection());
 
         ServerSocket server = null;
         Socket socket;
@@ -26,40 +43,55 @@ public class Server {
 
         try {
             server = new ServerSocket(PORT);
-            System.out.println("Сервер запущен!");
+            logger.log(Level.INFO, "Сервер запущен!");
+            /* ограничиваем количество подключений к серверу, чтобы сервер не упал, если число подключений превысит критическую массу
+            * либо просто хотим ограничить число участников чата*/
+            executorService = Executors.newFixedThreadPool(5);
 
             while (true) {
                 socket = server.accept();
-                System.out.println("Клиент подключился");
-                System.out.println("socket.getRemoteSocketAddress(): "+socket.getRemoteSocketAddress());
-                System.out.println("socket.getLocalSocketAddress() "+socket.getLocalSocketAddress());
-                new ClientHandler(this, socket);
+                logger.log(Level.INFO, "Клиент подключился");
+                logger.log(Level.INFO, "socket.getRemoteSocketAddress(): "+socket.getRemoteSocketAddress());
+                logger.log(Level.INFO, "socket.getLocalSocketAddress() "+socket.getLocalSocketAddress());
+                Socket finalSocket = socket;
+                // --подключаем клиентов в разных потоках, чтобы снизить нагрузку на сервер
+                executorService.execute(new ClientHandler(this, finalSocket));
             }
         } catch (IOException e) {
+            logger.log(Level.SEVERE, e.getMessage());
             e.printStackTrace();
         } finally {
             try {
+                executorService.shutdown();
                 authService.disconnect();
                 server.close();
             } catch (IOException e) {
+                logger.log(Level.SEVERE, e.getMessage());
                 e.printStackTrace();
             }
         }
     }
 
-    void broadcastMsg(String msg, ClientHandler sender){
+    void broadcastMsg(String msg, ClientHandler sender, boolean isServer) throws SQLException {
         String message = msg;
-        if (!msg.startsWith(sender.getNick())) {
-             message = String.format("%s: %s", sender.getNick(), msg);
+        String nick;
+        if (isServer) {
+            nick = "Сервер";
         }
+        else  {
+            nick = sender.getNick();
+        }
+        message = String.format("%s: %s", nick, msg);
+        chatStory.messageToStory("null", nick, sdf.format(new Date()), msg); //копируем сообщение в историю
         for (ClientHandler client : clients) {
                 client.sendMsg(message);
             }
+
     }
 
-    void privateMsg(String nickname, ClientHandler client, String msg){
-        if (nickname.equals("сервера")) {
-            client.sendMsg("Сообщение от " + nickname + ": "+ msg);
+    void privateMsg(String nickname, ClientHandler client, String msg) throws SQLException {
+        if (nickname.equals("Сервер")) {
+            client.sendMsg(nickname + ": "+ msg);
             return;
         }
         else {
@@ -81,28 +113,18 @@ public class Server {
 
     }
 
-    public void subscribe(ClientHandler clientHandler){
+    public void subscribe(ClientHandler clientHandler) throws SQLException {
         clients.add(clientHandler);
-        broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler);
-        privateMsg("сервера", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
+        broadcastMsg(clientHandler.getNick() + " подключился к чату!", clientHandler, true);
+        privateMsg("Сервер", clientHandler, "Добропожаловать в чат!\nДля смены ника направьте на сервер команду: /chgnick NewNickName\n" +
                 "Для отправки приватного сообщения перед текстом сообщения введите: /w usernickname\nДля выхода из чата направьте команду: /end");
         broadcastClientsList();
     }
 
-    public void unsubscribe(ClientHandler clientHandler){
-        broadcastMsg(clientHandler.getNick() + " вышел из чата", clientHandler);
+    public void unsubscribe(ClientHandler clientHandler) throws SQLException {
+        broadcastMsg(clientHandler.getNick() + " вышел из чата", clientHandler, true);
+        chatStory.messageToStory("null", "Сервер", sdf.format(new Date()), clientHandler.getNick() + " вышел из чата"); //копируем сообщение в историю
         clients.remove(clientHandler);
-        broadcastClientsList();
-    }
-    public void changeNick(ClientHandler client, String newNick) {
-        for (ClientHandler c : clients) {
-            if (c.getNick().equals(newNick)) {
-                privateMsg("сервера", client, "данный никнейм уже занят");
-                return;
-            }
-        }
-        broadcastMsg(client.getNick() + " сменил ник на " +newNick, client);
-        client.setNick(newNick);
         broadcastClientsList();
     }
 
@@ -126,4 +148,7 @@ public class Server {
     }
 
 
+    public void loadStory(ClientHandler client) throws SQLException {
+        client.sendMsg("/loadStory " + chatStory.getChatStory(client.getNick())); //пересылаем историю клиенту
+    }
 }
